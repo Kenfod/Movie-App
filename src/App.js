@@ -1,4 +1,5 @@
 import { useState } from "react";
+import StarRating from "./StarRating";
 
 const tempMovieData = [
   {
@@ -51,7 +52,10 @@ const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 export default function App() {
+  // eslint-disable-next-line no-unused-vars
   const [movies, setMovies] = useState(tempMovieData);
+
+  // eslint-disable-next-line no-unused-vars
   const [watched, setWatched] = useState(tempWatchedData);
 
   return (
@@ -131,28 +135,6 @@ function Box({ children }) {
   );
 }
 
-// function WatchedBox() {
-//   const [watched, setWatched] = useState(tempWatchedData);
-//   const [isOpen2, setIsOpen2] = useState(true);
-
-//   return (
-//     <div className="box">
-//       <button
-//         className="btn-toggle"
-//         onClick={() => setIsOpen2((open) => !open)}
-//       >
-//         {isOpen2 ? "–" : "+"}
-//       </button>
-//       {isOpen2 && (
-//         <>
-//           <WatchedSummary watched={watched} />
-//           <WatchedMoviesList watched={watched} />
-//         </>
-//       )}
-//     </div>
-//   );
-// }
-
 function MovieList({ movies }) {
   return (
     <ul className="list">
@@ -173,6 +155,17 @@ function Movie({ movie }) {
           <span>🗓</span>
           <span>{movie.Year}</span>
         </p>
+
+        {/* EMBEDDED RATING COMPONENT TO LET USERS RATE SEARCHED MOVIES */}
+        <div style={{ marginTop: "8px" }}>
+          <StarRating
+            size={18}
+            maxRating={5}
+            onSetRating={(rating) =>
+              console.log(`Rated ${movie.Title}: ${rating}`)
+            }
+          />
+        </div>
       </div>
     </li>
   );
@@ -212,7 +205,7 @@ function WatchedMoviesList({ watched }) {
   return (
     <ul className="list">
       {watched.map((movie) => (
-        <WatchedMovie movie={movie} />
+        <WatchedMovie movie={movie} key={movie.imdbID} />
       ))}
     </ul>
   );
@@ -236,6 +229,17 @@ function WatchedMovie({ movie }) {
           <span>⏳</span>
           <span>{movie.runtime} min</span>
         </p>
+
+        {/* EMBEDDED RATING COMPONENT IN WATCHED LIST AS READ-ONLY VISUAL */}
+        {/* <div style={{ marginTop: "4px" }}>
+          <StarRating
+            size={14}
+            maxRating={10}
+            defaultRating={movie.userRating}
+            color="#9c27b0"
+            onSetRating={() => {}}
+          />
+        </div> */}
       </div>
     </li>
   );
