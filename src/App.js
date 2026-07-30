@@ -52,22 +52,36 @@ const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 export default function App() {
+  // 1. LIFTED SEARCH STATE from the Search component
+  const [query, setQuery] = useState("");
+
   // eslint-disable-next-line no-unused-vars
   const [movies, setMovies] = useState(tempMovieData);
 
   // eslint-disable-next-line no-unused-vars
   const [watched, setWatched] = useState(tempWatchedData);
 
+  // 2. DERIVED STATE: Filter movies dynamically based on the search query input
+  const filteredMovies = movies.filter((movie) =>
+    movie.Title.toLowerCase().includes(query.toLowerCase()),
+  );
+
   return (
     <>
       <NavBar>
-        <Search />
-        <NumResults movies={movies} />
+        {/* 3. Pass query state and setter down to the Search component */}
+        <Search query={query} setQuery={setQuery} />
+        {/* 4. Pass the filtered movies array length to display matching results */}
+        <NumResults movies={filteredMovies} />
+        {/* <Search />
+        <NumResults movies={movies} /> */}
       </NavBar>
 
       <Main>
         <Box>
-          <MovieList movies={movies} />
+          {/* 5. Pass only the filtered movies to the display list */}
+          <MovieList movies={filteredMovies} />
+          {/* <MovieList movies={movies} /> */}
         </Box>
 
         <Box>
@@ -97,8 +111,9 @@ function Logo() {
   );
 }
 
-function Search() {
-  const [query, setQuery] = useState("");
+// 6. CONSUME PROPS: Search now accepts and controls state values passed from App
+function Search({ query, setQuery }) {
+  // const [] = useState("");
   return (
     <input
       className="search"
