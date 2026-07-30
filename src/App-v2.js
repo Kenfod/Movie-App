@@ -1,8 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import StarRating from "./StarRating";
 
-// Actual OMDb API key
-const KEY = "790938a5";
+const tempMovieData = [
+  {
+    imdbID: "tt1375666",
+    Title: "Inception",
+    Year: "2010",
+    Poster:
+      "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
+  },
+  {
+    imdbID: "tt0133093",
+    Title: "The Matrix",
+    Year: "1999",
+    Poster:
+      "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg",
+  },
+  {
+    imdbID: "tt6751668",
+    Title: "Parasite",
+    Year: "2019",
+    Poster:
+      "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg",
+  },
+];
 
 const tempWatchedData = [
   {
@@ -15,88 +36,52 @@ const tempWatchedData = [
     imdbRating: 8.8,
     userRating: 10,
   },
+  {
+    imdbID: "tt0088763",
+    Title: "Back to the Future",
+    Year: "1985",
+    Poster:
+      "https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SX300.jpg",
+    runtime: 116,
+    imdbRating: 8.5,
+    userRating: 9,
+  },
 ];
 
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 export default function App() {
+  // 1. LIFTED SEARCH STATE from the Search component
   const [query, setQuery] = useState("");
-  // Start with an empty movies array since data will come from the API
-  const [movies, setMovies] = useState([]);
+
+  // eslint-disable-next-line no-unused-vars
+  const [movies, setMovies] = useState(tempMovieData);
 
   // eslint-disable-next-line no-unused-vars
   const [watched, setWatched] = useState(tempWatchedData);
 
-  // New visual states for networking
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  // FETCH MOVIE DATA ON QUERY CHANGE
-  useEffect(() => {
-    // Native browser AbortController cleans up messy double requests on rapid typing
-    const controller = new AbortController();
-
-    async function fetchMovies() {
-      try {
-        setIsLoading(true);
-        setError(""); // Clear previous errors
-
-        const res = await fetch(
-          // `https://www.omdbapi.com/?i=tt3896198&apikey=${KEY}&s=${query}`,
-          `https://omdbapi.com/?&apikey=${KEY}&s=${query}`,
-
-          {
-            signal: controller.signal,
-          },
-        );
-
-        if (!res.ok)
-          throw new Error("Something went wrong with fetching movies");
-
-        const data = await res.json();
-
-        // OMDb returns Response: "False" if no titles match the text search
-        if (data.Response === "False") throw new Error("Movie not found");
-
-        setMovies(data.Search);
-        setError("");
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          setError(err.message);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    // Do not query the API if the search box is empty
-    if (query.length < 3) {
-      setMovies([]);
-      setError("");
-      return;
-    }
-
-    fetchMovies();
-
-    // Cleanup function aborts ongoing requests when the user keeps typing
-    return () => controller.abort();
-  }, [query]);
+  // 2. DERIVED STATE: Filter movies dynamically based on the search query input
+  const filteredMovies = movies.filter((movie) =>
+    movie.Title.toLowerCase().includes(query.toLowerCase()),
+  );
 
   return (
     <>
       <NavBar>
-        <Logo />
+        {/* 3. Pass query state and setter down to the Search component */}
         <Search query={query} setQuery={setQuery} />
-        <NumResults movies={movies} />
+        {/* 4. Pass the filtered movies array length to display matching results */}
+        <NumResults movies={filteredMovies} />
+        {/* <Search />
+        <NumResults movies={movies} /> */}
       </NavBar>
 
       <Main>
         <Box>
-          {/* Conditional rendering based on active networking states */}
-          {isLoading && <Loader />}
-          {!isLoading && !error && <MovieList movies={movies} />}
-          {error && <ErrorMessage message={error} />}
+          {/* 5. Pass only the filtered movies to the display list */}
+          <MovieList movies={filteredMovies} />
+          {/* <MovieList movies={movies} /> */}
         </Box>
 
         <Box>
@@ -108,22 +93,13 @@ export default function App() {
   );
 }
 
-// --- HELPER FEEDBACK COMPONENTS ---
-function Loader() {
-  return <p className="loader">Loading movies...</p>;
-}
-
-function ErrorMessage({ message }) {
-  return (
-    <p className="error">
-      <span>⚠️</span> {message}
-    </p>
-  );
-}
-
-// --- STRUCTURAL LAYOUT COMPONENTS ---
 function NavBar({ children }) {
-  return <nav className="nav-bar">{children}</nav>;
+  return (
+    <nav className="nav-bar">
+      <Logo />
+      {children}
+    </nav>
+  );
 }
 
 function Logo() {
@@ -135,7 +111,9 @@ function Logo() {
   );
 }
 
+// 6. CONSUME PROPS: Search now accepts and controls state values passed from App
 function Search({ query, setQuery }) {
+  // const [] = useState("");
   return (
     <input
       className="search"
@@ -192,6 +170,8 @@ function Movie({ movie }) {
           <span>🗓</span>
           <span>{movie.Year}</span>
         </p>
+
+        {/* EMBEDDED RATING COMPONENT TO LET USERS RATE SEARCHED MOVIES */}
         <div style={{ marginTop: "8px" }}>
           <StarRating
             size={18}
@@ -221,15 +201,15 @@ function WatchedSummary({ watched }) {
         </p>
         <p>
           <span>⭐️</span>
-          <span>{avgImdbRating.toFixed(1)}</span>
+          <span>{avgImdbRating}</span>
         </p>
         <p>
           <span>🌟</span>
-          <span>{avgUserRating.toFixed(1)}</span>
+          <span>{avgUserRating}</span>
         </p>
         <p>
           <span>⏳</span>
-          <span>{Math.round(avgRuntime)} min</span>
+          <span>{avgRuntime} min</span>
         </p>
       </div>
     </div>
@@ -264,6 +244,17 @@ function WatchedMovie({ movie }) {
           <span>⏳</span>
           <span>{movie.runtime} min</span>
         </p>
+
+        {/* EMBEDDED RATING COMPONENT IN WATCHED LIST AS READ-ONLY VISUAL */}
+        {/* <div style={{ marginTop: "4px" }}>
+          <StarRating
+            size={14}
+            maxRating={10}
+            defaultRating={movie.userRating}
+            color="#9c27b0"
+            onSetRating={() => {}}
+          />
+        </div> */}
       </div>
     </li>
   );
