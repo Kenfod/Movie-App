@@ -10,7 +10,6 @@ const average = (arr) =>
 export default function App() {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
-  // const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
@@ -42,6 +41,13 @@ export default function App() {
     }
     setWatched((prevWatched) => [...prevWatched, movie]);
     handleCloseMovie();
+  }
+
+  // ACTIVE INTERACTION HANDLER: Filters out a movie by its unique IMDb ID
+  function handleDeleteWatched(id) {
+    setWatched((prevWatched) =>
+      prevWatched.filter((movie) => movie.imdbID !== id),
+    );
   }
 
   useEffect(() => {
@@ -114,7 +120,11 @@ export default function App() {
           ) : (
             <>
               <WatchedSummary watched={watched} />
-              <WatchedMoviesList watched={watched} />
+              {/* Passed down our new deletion function to the WatchedMoviesList */}
+              <WatchedMoviesList
+                watched={watched}
+                onDeleteWatched={handleDeleteWatched}
+              />
             </>
           )}
         </Box>
@@ -144,7 +154,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched }) {
   useEffect(() => {
     async function getMovieDetails() {
       setIsLoading(true);
-      // FIXED: Passed ${KEY} variable safely into the string query
+      // Passed ${KEY} variable safely into the string query
       const res = await fetch(
         `https://www.omdbapi.com/?apikey=${KEY}&i=${selectedId}`,
       );
@@ -161,7 +171,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched }) {
       Title: title,
       Year: year,
       Poster: poster,
-      // FIXED: Added optional chaining (?.) to prevent undefined runtime text split crashes
+      // Added optional chaining (?.) to prevent undefined runtime text split crashes
       runtime: Number(runtime?.split(" ").at(0)) || 0,
       imdbRating: Number(imdbRating) || 0,
       userRating,
@@ -340,17 +350,23 @@ function WatchedSummary({ watched }) {
   );
 }
 
-function WatchedMoviesList({ watched }) {
+// UPDATE LIST: Forward the onDeleteWatched prop down to individual row components
+function WatchedMoviesList({ watched, onDeleteWatched }) {
   return (
     <ul className="list">
       {watched.map((movie) => (
-        <WatchedMovie movie={movie} key={movie.imdbID} />
+        <WatchedMovie
+          movie={movie}
+          key={movie.imdbID}
+          onDeleteWatched={onDeleteWatched}
+        />
       ))}
     </ul>
   );
 }
 
-function WatchedMovie({ movie }) {
+// UPDATE ITEM: Consume the prop and embed a styled button element
+function WatchedMovie({ movie, onDeleteWatched }) {
   return (
     <li>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
@@ -368,12 +384,20 @@ function WatchedMovie({ movie }) {
           <span>⏳</span>
           <span>{movie.runtime} min</span>
         </p>
+
+        {/* Delete Action Trigger Button */}
+        <button
+          className="btn-delete"
+          onClick={() => onDeleteWatched(movie.imdbID)}
+        >
+          X
+        </button>
       </div>
     </li>
   );
 }
 
-// FIXED: Added missing prop validations
+// Added prop validations
 MovieList.propTypes = {
   movies: PropTypes.array,
   onSelectMovie: PropTypes.func,
@@ -388,4 +412,15 @@ MovieDetails.propTypes = {
   selectedId: PropTypes.string,
   onCloseMovie: PropTypes.func,
   onAddWatched: PropTypes.func,
+};
+
+// UPDATED PROPTYPES Validation
+WatchedMoviesList.propTypes = {
+  watched: PropTypes.array,
+  onDeleteWatched: PropTypes.func,
+};
+
+WatchedMovie.propTypes = {
+  movie: PropTypes.object,
+  onDeleteWatched: PropTypes.func,
 };
