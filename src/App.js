@@ -10,10 +10,22 @@ const average = (arr) =>
 export default function App() {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
+  // const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+
+  // LAZY INITIAL STATE: Read from local storage only on the very first render cycle
+  const [watched, setWatched] = useState(() => {
+    const savedWatchedList = localStorage.getItem("watchedMoviesList");
+    // If there is data saved, parse it from JSON back into a JavaScript array; otherwise, return an empty array
+    return savedWatchedList ? JSON.parse(savedWatchedList) : [];
+  });
+
+  // STATE SYNCHRONIZER: Automatically saves the array to local storage whenever the watched state changes
+  useEffect(() => {
+    localStorage.setItem("watchedMoviesList", JSON.stringify(watched));
+  }, [watched]);
 
   function handleSelectMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
